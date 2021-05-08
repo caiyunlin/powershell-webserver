@@ -7,5 +7,9 @@
 ## 访问
 http://localhost:8080 端口可以在 startweb.bat 中配置
 
+![image](http://images.caiyunlin.com/20210508061910.png)
+
+![image](http://images.caiyunlin.com/20210508080251.png)
+
 ## 关闭
 直接关掉 startweb.bat 窗口
