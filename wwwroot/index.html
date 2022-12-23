@@ -4,12 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <title>PowerShell Web Server</title>
-    <script type="text/javascript" src="/public/jquery/3.5.0/jquery.min.js"></script>
-</head>
+    <link rel="icon" href="data:,">
+</head> 
 
 <body>
 
     <h1>参数测试</h1>
+
     <input type="text" name="p1" id="p1" value="你好" />
     <input type="button" name="btnTest" value="参数测试" onclick="test();" /><br /><br />
 
@@ -21,11 +22,17 @@
 
     <input type="button" name="btnLogin" value="登录测试" onclick="login();" />
 
+    <br/>
+
+    <h1>退出</h1>
+
+    <input type="button" name="btnLogin" value="退出" onclick="window.location.href='logout.html'" />
+
     <script type="text/javascript">
 
         function test() {
             var data = {
-              "p1" : $("#p1").val()
+              "p1" : document.getElementById("p1").value
             }
             call_svc("/test", data, function (result) {
                 alert(result.message);
@@ -34,8 +41,8 @@
 
         function login() {
             var data = {
-                "username": $("#username").val(),
-                "password": $("#password").val(),
+                "username": document.getElementById("username").value,
+                "password": document.getElementById("password").value,
                 "test": [
                     { "a1": 1 },
                     { "a1": 2 },
@@ -47,46 +54,33 @@
             })
         }
 
-        //get encoded data and post to powershell backend
-        function get_encoded_data(data){
-            var jsonString = JSON.stringify(data);
-            var urlEncodedData = encodeURIComponent(jsonString);
-            // use base64 so powershell could parse
-            var base64Data = btoa(urlEncodedData);
-            // '=' has special meaning in querystring, like a=b, need replace them
-            var resultData = base64Data.replace(/=/g,"%3D");
-            return resultData
-        }
-
-        function call_svc(method, data, callback, errCallback) {
-            var url = method;
-            var postData = get_encoded_data(data)
-            $.ajax({
-                type: 'post',
-                url: url,
-                data: postData,
-                cache: false,
-                dataType: 'json',
-                success: function (result) {
-                    if (result.status == "success") {
-                        if (callback) {
-                            callback(result);
-                        }
+        function call_svc(url, data, callback, errCallback){
+            fetch(url, {
+              method: 'POST', // or 'PUT'
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status == "success") {
+                    if (callback) { callback(result);}
+                }
+                else {
+                    if (errCallback) {
+                        errCallback(result);
                     }
                     else {
-                        if (errCallback) {
-                            errCallback(result);
-                        }
-                        else {
-                            alert(result.message);
-                        }
+                        alert(result.message);
                     }
-                },
-                error: function (err) {
-                    alert(err);
                 }
+            })
+            .catch((error) => {
+              console.error('Error:', error);
             });
         }
+
     </script>
 </body>
 

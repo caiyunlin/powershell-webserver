@@ -32,8 +32,8 @@ function Send-WebResponse($context, $content) {
 function Get-PostData{
     $reader = new-object System.IO.StreamReader($context.Request.InputStream)
     $text = $reader.ReadToEnd()
-    $text = $text.Replace("%3D","=")
-    $text = ConvertFrom-Base64 $text
+    # $text = $text.Replace("%3D","=")
+    # $text = ConvertFrom-Base64 $text
     $text = [System.Web.HttpUtility]::UrlDecode($text)
     Write-Host "$text"
     return ConvertFrom-Json $text
@@ -58,8 +58,9 @@ while ($http.IsListening) {
           $RequestUrl = "/index.html"
         }
         if(Test-Path "$scriptPath\$webPath\$RequestUrl"){
-            $ContentStream = [System.IO.File]::OpenRead( "$scriptPath\$webPath\$RequestUrl" );
-            $ContentStream.CopyTo( $Context.Response.OutputStream );
+            $fileStream = [System.IO.File]::OpenRead( "$scriptPath\$webPath\$RequestUrl" )
+            $fileStream.CopyTo( $Context.Response.OutputStream )
+            $fileStream.Close()
         }
         else{
             Send-WebResponse $context "404 : Not found $RequestUrl"            

@@ -1,5 +1,5 @@
-# powershell-webserver
-一个基于 PowerShell 的简单 Web Server 的实现。
+# PowerShell-WebServer
+一个基于 PowerShell 的简单 Web Server 的实现，基于 HttpListener
 
 ## 启动 
 管理员方式执行 startweb.bat 
