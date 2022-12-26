@@ -24,6 +24,9 @@ function ConvertFrom-Base64($str){
 }
 
 function Send-WebResponse($context, $content) {
+    if($content.GetType().Name -ne "String"){
+        $content = ConvertTo-JSON $content
+    }
     $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
     $context.Response.ContentLength64 = $buffer.Length
     $context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
@@ -71,22 +74,22 @@ while ($http.IsListening) {
     # Post for APIs, handle by controllers
     if($context.Request.HttpMethod -eq "POST"){
         $controllerFile = "$scriptPath/$controllerPath/$RequestUrl.ps1"
+        $jsonObj = @{
+            "status" = "error"
+            "message" = "Unsupported API $RequestUrl"
+        }
         if(Test-Path $controllerFile){
             try{
                 $postData = Get-PostData $context           
                 . $controllerFile
             }
             catch{
-                $jsonObj = @{
-                    'status' = 'error'
-                    'message' = $_.ToString()
-                }
-                $json =  ConvertTo-JSON $jsonObj
-                Send-WebResponse $context $json
+                $jsonObj.message = $_.ToString()
+                Send-WebResponse $context $jsonObj
             }
         }
         else{
-            Send-WebResponse $context "{`"status`":`"error`",`"message`":`"Unsupported API $RequestUrl`"}";
+            Send-WebResponse $context $jsonObj
         }
         $context.Response.Close()
     }

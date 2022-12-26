@@ -1,8 +1,16 @@
 ﻿# postData 
+
+$response = @{
+    status = "success"
+    message = ""
+}
+
 if($postData.username -eq "admin" -and $postData.password -eq "admin"){
     $userName = $postData.username
-    Send-WebResponse $context "{`"status`":`"success`",`"message`":`"欢迎你 $userName`"}"
+    $response.message = "欢迎你 $userName"
+    Send-WebResponse $context (ConvertTo-Json $response)
 }
 else{
-    Send-WebResponse $context "{`"status`":`"error`",`"message`":`"无效的用户名或密码`"}"
+    $response.message = "无效的用户名或密码"
+    Send-WebResponse $context (ConvertTo-Json $response)
 }
