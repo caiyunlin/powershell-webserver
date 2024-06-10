@@ -10,6 +10,6 @@ A simple Web Server implemented based on HttpListener, written in PowerShell
 ## Use
 Visit http://localhost:8080 in browser, you could config port in startweb.bat file
 
-## Close
+## Stop
 Ctrl+C is not work, just close the Console window of startweb.bat
 
