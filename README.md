@@ -1,6 +1,6 @@
 # PowerShell-WebServer
 
-A simple Web Server implemented based on HttpListener, written in PowerShell
+A simple Web Server implemented based on HttpListener, written in PowerShell.
 
 ## Start
 - Run Command Line in Administrator Mode  
