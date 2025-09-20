@@ -1,8 +1,12 @@
 # PowerShell Web Server
 
+<<<<<<< HEAD
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
+=======
+一个基于 PowerShell 的简单 Web Server 的实现，基于 HttpListener.
+>>>>>>> f75c88cc28b366d5af83e63e1e6cd9b78be66bac
 
 一个基于 PowerShell 实现的轻量级 Web 服务器，使用 .NET HttpListener，支持静态文件服务和 RESTful API 端点。
 

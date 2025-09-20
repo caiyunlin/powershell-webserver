@@ -1,13 +1,18 @@
 # PowerShell Web Server
 
+<<<<<<< HEAD
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
+=======
+A simple Web Server implemented based on HttpListener, written in PowerShell.
+>>>>>>> f75c88cc28b366d5af83e63e1e6cd9b78be66bac
 
 A lightweight web server implemented in PowerShell using .NET HttpListener, supporting both static file serving and RESTful API endpoints.
 
 ## 🚀 Features
 
+<<<<<<< HEAD
 - **Static File Serving**: Serves files from the `wwwroot` directory
 - **RESTful API**: POST endpoints handled by PowerShell controllers
 - **Simple Authentication**: Built-in login functionality
@@ -135,4 +140,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📞 Support
 
 If you encounter any issues or have questions, please [create an issue](../../issues) in this repository.
+=======
+## Stop
+Ctrl+C is not work, just close the Console window of startweb.bat
+>>>>>>> f75c88cc28b366d5af83e63e1e6cd9b78be66bac
 
