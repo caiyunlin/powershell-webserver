@@ -1,10 +1,12 @@
 # PowerShell Web Server
 
+English | [简体中文 (Chinese)](README.zh-CN.md)
+
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
 
-A lightweight web server implemented in PowerShell using .NET HttpListener, supporting both static file serving and RESTful API endpoints.
+A lightweight web server implemented in PowerShell using .NET HttpListener, supporting both static file serving and RESTful API endpoints. Now supports concurrent (multi-threaded) request handling.
 
 ## 🚀 Features
 
@@ -15,6 +17,7 @@ A lightweight web server implemented in PowerShell using .NET HttpListener, supp
 - **URL Decoding**: Proper handling of URL-encoded data
 - **Base64 Utilities**: Built-in encoding/decoding functions
 - **Graceful Shutdown**: Clean exit via logout endpoint
+- **Multi-Threaded Handling**: Concurrent request processing via .NET ThreadPool with configurable `-MaxConcurrency`
 
 ## 📁 Project Structure
 
@@ -55,7 +58,7 @@ startweb.bat
 ### Method 3: Custom Configuration
 ```powershell
 # Custom port and paths
-.\webserver.ps1 -port 8080 -webPath "wwwroot" -controllerPath "controller"
+./webserver.ps1 -port 8080 -webPath "wwwroot" -controllerPath "controller" -MaxConcurrency 8
 ```
 
 ## 🌐 Usage
@@ -83,6 +86,7 @@ startweb.bat
 | `port` | Integer | Yes | - | HTTP server port |
 | `webPath` | String | No | "wwwroot" | Static files directory |
 | `controllerPath` | String | No | "controller" | API controllers directory |
+| `MaxConcurrency` | Integer | No | CPU count | Max parallel in-flight requests |
 
 ### Example API Controller
 
@@ -104,8 +108,8 @@ Access via: `POST /hello` with JSON body `{"name": "World"}`
 ## 🛑 Stopping the Server
 
 - **Graceful Shutdown**: Navigate to `http://localhost:8090/logout.html`
+- **Ctrl+C**: Supported – server stops accepting new requests, in-flight ones finish
 - **Force Stop**: Close the PowerShell console window
-- **Note**: `Ctrl+C` may not work reliably
 
 ## 🔒 Security Considerations
 
@@ -123,6 +127,12 @@ Access via: `POST /hello` with JSON body `{"name": "World"}`
 - **Port Already in Use**: Change the port number in `startweb.bat` or use a different port
 - **File Not Found**: Check that files exist in the `wwwroot` directory
 - **API Errors**: Check PowerShell console for error messages
+- **High CPU**: Reduce `-MaxConcurrency` (default = logical CPU count)
+- **Slow Shutdown**: Long-running controller scripts delay exit; ensure they finish quickly
+- **Test Concurrency**: Run:
+   ```powershell
+   1..10 | ForEach-Object { Start-Job { curl http://localhost:8090/index.html > $null } } | Receive-Job -Wait -AutoRemoveJob
+   ```
 
 ## 📝 License
 
