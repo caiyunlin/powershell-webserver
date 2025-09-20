@@ -13,6 +13,21 @@ $http = [System.Net.HttpListener]::new()
 $http.Prefixes.Add("http://localhost:$port/")
 $http.Start()
 
+# ---- Ctrl+C Support & Running Flag ----
+# Use a script-scoped flag so the CancelKeyPress handler can signal the main loop
+$script:ServerRunning = $true
+[Console]::TreatControlCAsInput = $false
+[Console]::CancelKeyPress += {
+    param($sender, $e)
+    # Prevent the default hard terminate so we can clean up
+    $e.Cancel = $true
+    if ($script:ServerRunning) {
+        Write-Host "`nCtrl+C received, stopping server..." -ForegroundColor Yellow
+        $script:ServerRunning = $false
+        try { if ($http.IsListening) { $http.Stop() } } catch {}
+    }
+}
+
 function ConvertTo-Base64($str){
     $result = [Convert]::ToBase64String([System.Text.UTF8Encoding]::UTF8.GetBytes($str))
     return $result
@@ -47,59 +62,90 @@ if ($http.IsListening) {
     write-host "$($http.Prefixes)" -f 'y'
 }
 
-# INFINITE LOOP, Used to listen for requests
-while ($http.IsListening) {
-    $context = $http.GetContext()
-    $RequestUrl = $context.Request.Url.LocalPath
-    
-    Write-Host "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) : $($context.Request.Url)" -f 'mag'
+<#
+    Main loop refactored to non-blocking style:
+    - Use BeginGetContext() + WaitOne(timeout) so we periodically return to the loop
+      giving PowerShell a chance to process Ctrl+C (CancelKeyPress)
+    - Preserves original request handling logic
+    - Graceful shutdown triggered by either Ctrl+C or /logout.html
+ #>
 
-    # Handle GET requests
-    if ($context.Request.HttpMethod -eq 'GET') {       
-        # Redirect root to index.html
-        if($RequestUrl -eq "/") {
-          $RequestUrl = "/index.html"
-        }
-        if(Test-Path "$scriptPath\$webPath\$RequestUrl"){
-            $fileStream = [System.IO.File]::OpenRead( "$scriptPath\$webPath\$RequestUrl" )
-            $fileStream.CopyTo( $Context.Response.OutputStream )
-            $fileStream.Close()
-        }
-        else{
-            Send-WebResponse $context "404 : Not found $RequestUrl"            
-        }
-        $context.Response.Close()
-    }
-    
-    # Handle POST requests for APIs, processed by controllers
-    if($context.Request.HttpMethod -eq "POST"){
-        $controllerFile = "$scriptPath/$controllerPath/$RequestUrl.ps1"
-        $jsonObj = @{
-            "status" = "error"
-            "message" = "Unsupported API $RequestUrl"
-        }
-        if(Test-Path $controllerFile){
-            try{
-                $postData = Get-PostData $context           
-                . $controllerFile
+while ($script:ServerRunning -and $http.IsListening) {
+    try {
+        # Start async accept
+        $async = $http.BeginGetContext($null, $null)
+        # Wait up to 1 second so we can poll for Ctrl+C
+        $signaled = $async.AsyncWaitHandle.WaitOne(1000)
+        if (-not $script:ServerRunning -or -not $http.IsListening) { break }
+        if (-not $signaled) { continue } # timeout – loop again
+
+        $context = $http.EndGetContext($async)
+        $RequestUrl = $context.Request.Url.LocalPath
+        Write-Host "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) : $($context.Request.Url)" -f 'mag'
+
+        # Handle GET requests
+        if ($context.Request.HttpMethod -eq 'GET') {       
+            # Redirect root to index.html
+            if($RequestUrl -eq "/") { $RequestUrl = "/index.html" }
+            if(Test-Path "$scriptPath\$webPath\$RequestUrl"){
+                try {
+                    $fileStream = [System.IO.File]::OpenRead( "$scriptPath\$webPath\$RequestUrl" )
+                    $fileStream.CopyTo( $Context.Response.OutputStream )
+                    $fileStream.Close()
+                } catch {
+                    Send-WebResponse $context "500 : Internal Server Error"
+                }
             }
-            catch{
-                $jsonObj.message = $_.ToString()
+            else {
+                Send-WebResponse $context "404 : Not found $RequestUrl"            
+            }
+            $context.Response.Close()
+        }
+
+        # Handle POST requests for APIs, processed by controllers
+        if($context.Request.HttpMethod -eq "POST"){
+            $controllerFile = "$scriptPath/$controllerPath/$RequestUrl.ps1"
+            $jsonObj = @{
+                "status" = "error"
+                "message" = "Unsupported API $RequestUrl"
+            }
+            if(Test-Path $controllerFile){
+                try{
+                    $postData = Get-PostData $context           
+                    . $controllerFile
+                }
+                catch{
+                    $jsonObj.message = $_.ToString()
+                    Send-WebResponse $context $jsonObj
+                }
+            }
+            else{
                 Send-WebResponse $context $jsonObj
             }
+            $context.Response.Close()
         }
-        else{
-            Send-WebResponse $context $jsonObj
+
+        # Exit Web Server if logout page is accessed
+        if($RequestUrl -eq "/logout.html"){
+            Write-Host "Exiting Web Server (logout)" -ForegroundColor Yellow
+            $script:ServerRunning = $false
         }
-        $context.Response.Close()
     }
-    # PowerShell will continue looping and listen for new requests...
-    # Exit Web Server if logout page is accessed
-    if($RequestUrl -eq "/logout.html"){
-        Write-Host "Exiting Web Server"
-        $http.Close();
-        $http.Dispose();
-        exit;
+    catch [System.ObjectDisposedException] {
+        break
+    }
+    catch {
+        if ($script:ServerRunning) {
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        }
     }
 }
+
+# ---- Cleanup ----
+try {
+    if ($http.IsListening) { $http.Stop() }
+} catch {}
+try { $http.Close() } catch {}
+try { $http.Dispose() } catch {}
+Write-Host "Server stopped." -ForegroundColor Green
 
