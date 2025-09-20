@@ -47,14 +47,14 @@ if ($http.IsListening) {
     write-host "$($http.Prefixes)" -f 'y'
 }
 
-# INFINTE LOOP, Used to listen for requests
+# INFINITE LOOP, Used to listen for requests
 while ($http.IsListening) {
     $context = $http.GetContext()
     $RequestUrl = $context.Request.Url.LocalPath
     
     Write-Host "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) : $($context.Request.Url)" -f 'mag'
 
-    # Get Request Url
+    # Handle GET requests
     if ($context.Request.HttpMethod -eq 'GET') {       
         # Redirect root to index.html
         if($RequestUrl -eq "/") {
@@ -71,7 +71,7 @@ while ($http.IsListening) {
         $context.Response.Close()
     }
     
-    # Post for APIs, handle by controllers
+    # Handle POST requests for APIs, processed by controllers
     if($context.Request.HttpMethod -eq "POST"){
         $controllerFile = "$scriptPath/$controllerPath/$RequestUrl.ps1"
         $jsonObj = @{
@@ -93,10 +93,10 @@ while ($http.IsListening) {
         }
         $context.Response.Close()
     }
-    # powershell will continue looping and listen for new requests...
-    # Exit Web Server if logout
+    # PowerShell will continue looping and listen for new requests...
+    # Exit Web Server if logout page is accessed
     if($RequestUrl -eq "/logout.html"){
-        Write-Host "Exit Web Server"
+        Write-Host "Exiting Web Server"
         $http.Close();
         $http.Dispose();
         exit;

@@ -1,4 +1,4 @@
-﻿# postData 
+﻿# Handle login request with postData
 
 $response = @{
     status = "success"
@@ -7,10 +7,10 @@ $response = @{
 
 if($postData.username -eq "admin" -and $postData.password -eq "admin"){
     $userName = $postData.username
-    $response.message = "欢迎你 $userName"
+    $response.message = "Welcome, $userName!"
     Send-WebResponse $context (ConvertTo-Json $response)
 }
 else{
-    $response.message = "无效的用户名或密码"
+    $response.message = "Invalid username or password"
     Send-WebResponse $context (ConvertTo-Json $response)
 }
